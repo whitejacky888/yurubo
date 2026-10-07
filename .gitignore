@@ -1,0 +1,8 @@
+# Git に入れないファイル
+__pycache__/
+*.pyc
+.venv/
+venv/
+# データベース（個人情報が入るので、絶対に Git に入れない）
+*.db
+.pytest_cache/

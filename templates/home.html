@@ -1,0 +1,62 @@
+{#
+  画面 1：ホーム（コルクボード）
+  ★ 匿名設計：ここで使える情報は「タイトル・日時・場所・人数」だけ。
+    app.py 側で投稿者の情報を渡していないので、表示しようとしても表示できません。
+#}
+{% extends "base.html" %}
+{% block content %}
+  <header class="app-header">
+    <a class="logo" href="{{ url_for('home') }}">ゆる募</a>
+    <span class="sub">{{ current_user.icon }} {{ current_user.name }}</span>
+  </header>
+  <p class="catch">ゆるく貼って、そっと集まる。</p>
+
+  {# --- 開催が決まった予定 --- #}
+  {% if confirmed %}
+    <h2>🎉 開催が決まった予定</h2>
+    {% for p in confirmed %}
+      <a class="sticky" style="{{ sticky_style(p.id) }}" href="{{ url_for('chat', post_id=p.id) }}">
+        <h3>{{ p.title }}</h3>
+        <p class="meta">🗓 {{ p.event_at | pretty_datetime }}{% if p.place %}　📍 {{ p.place }}{% endif %}</p>
+        <p class="count">トークをひらく →</p>
+      </a>
+    {% endfor %}
+  {% endif %}
+
+  {# --- 自分宛のゆる募集 --- #}
+  <h2>📌 あなた宛のゆる募</h2>
+  {% for p in incoming %}
+    {# 募集の番号（id）から、付箋の色と傾きを決めます（毎回同じ見た目になる） #}
+    <a class="sticky" style="{{ sticky_style(p.id) }}" href="{{ url_for('post_detail', post_id=p.id) }}">
+      <h3>{{ p.title }}</h3>
+      <p class="meta">🗓 {{ p.event_at | pretty_datetime }}</p>
+      {% if p.place %}<p class="meta">📍 {{ p.place }}</p>{% endif %}
+      <p class="count">
+        気になってる人：{{ p.interested }}人
+        {% if p.reacted %}<span class="badge sage">手を挙げ中</span>{% endif %}
+      </p>
+    </a>
+  {% else %}
+    {# for の中身が 0 件のときは else の部分が表示されます #}
+    <p class="empty">いまはまだ何も貼られていません。<br>気が向いたら、右下の＋から誘ってみよう。</p>
+  {% endfor %}
+
+  {# --- 自分の募集 --- #}
+  <h2>✏️ あなたの募集</h2>
+  {% for p in my_posts %}
+    <a class="sticky paper" style="{{ sticky_style(p.id + 1, color=False) }}" href="{{ url_for('post_detail', post_id=p.id) }}">
+      <h3>{{ p.title }}</h3>
+      <p class="meta">🗓 {{ p.event_at | pretty_datetime }}</p>
+      <p class="count">集まり具合：{{ 1 + p.interested }} / {{ p.capacity }}人</p>
+    </a>
+  {% else %}
+    <p class="empty">まだ募集していません。</p>
+  {% endfor %}
+{% endblock %}
+
+{# 右下の丸い＋ボタン（FAB） #}
+{% block fab %}
+  <a class="fab" href="{{ url_for('new_post') }}" aria-label="誘いをつくる">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#4E3B27" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  </a>
+{% endblock %}

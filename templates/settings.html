@@ -1,0 +1,36 @@
+{# じぶん（プロフィール・ログアウト・アカウント削除） #}
+{% extends "base.html" %}
+{% from "macros.html" import csrf_field, icon_picker %}
+{% block title %}じぶん｜ゆる募{% endblock %}
+{% block content %}
+  <h1>じぶん</h1>
+
+  <form method="post" class="card">
+    {{ csrf_field() }}
+    <label for="name">表示名</label>
+    <input type="text" id="name" name="name" maxlength="20" value="{{ current_user.name }}" required>
+    <label>アイコン</label>
+    {{ icon_picker(icons, current_user.icon) }}
+    <p class="sub">名前とアイコンは、開催が決まったメンバーにだけ表示されます。</p>
+    <button class="btn block">保存する</button>
+  </form>
+
+  <div class="card">
+    <p class="sub">電話番号：{{ current_user.phone }}</p>
+    <p><a href="{{ url_for('terms') }}">利用規約・プライバシーポリシー</a></p>
+    <form method="post" action="{{ url_for('logout') }}">
+      {{ csrf_field() }}
+      <button class="btn plain small">ログアウト</button>
+    </form>
+  </div>
+
+  <hr class="dashed">
+  <h2>アカウントを削除</h2>
+  <form method="post" action="{{ url_for('account_delete') }}" class="card">
+    {{ csrf_field() }}
+    <p class="sub">アカウントと、電話帳・グループ・募集などのデータがすべて削除されます。元には戻せません。</p>
+    <label for="confirm">確認のため「さくじょ」と入力してください</label>
+    <input type="text" id="confirm" name="confirm" placeholder="さくじょ">
+    <button class="btn danger block">アカウントを削除する</button>
+  </form>
+{% endblock %}

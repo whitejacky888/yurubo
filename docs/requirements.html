@@ -1,0 +1,117 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}</style><style>:root{color-scheme:light dark;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}}:root[data-theme="dark"]{color-scheme:dark;--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}:root[data-theme="light"]{color-scheme:light}@media print{:root,:root[data-theme="dark"]{color-scheme:light;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}}body{background:var(--md-bg);color:var(--md-text);max-width:720px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:10px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'SF Pro','Segoe UI',sans-serif;overflow-wrap:break-word}body>:first-child{margin-top:0}h1,h2,h3,h4,h5,h6{margin:6px 0 0;line-height:1.25;font-weight:600;text-wrap:balance}h1{font-size:1.35em}h2{font-size:1.15em;color:var(--md-muted)}h3,h4,h5,h6{font-size:1em}p,ul,ol,blockquote,table,pre,hr{margin:0}strong{font-weight:600}a{color:var(--md-link);text-decoration:none}a:hover{text-decoration:underline}ul,ol{display:flex;flex-direction:column;gap:6px;padding-left:22px}ul{list-style:disc}ol{list-style:decimal}:is(li,td,th)>*+:is(p,ul,ol,blockquote){margin-top:6px}blockquote{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--md-rule);padding-left:10px;color:var(--md-muted)}:not(pre)>code{background:var(--md-fill);padding:1px 3px;border-radius:4px;font:.92em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}a>code{background:none;color:inherit}pre{background:var(--md-fill);padding:10px 12px;border-radius:6px;overflow-x:auto;font:12px/1.5 'SF Mono',ui-monospace,Menlo,Consolas,monospace;margin-block:4px}pre code{background:none;padding:0;font:inherit}table{width:100%;border-collapse:separate;border-spacing:2px;font:inherit}th,td{padding:6px 8px;border-radius:3px;text-align:left;vertical-align:top}th{background:var(--md-fill-strong);font-weight:600}td{background:var(--md-fill)}:is(th,td) :not(pre)>code{background:transparent}hr{border:0;border-top:1px solid var(--md-rule-strong);margin-block:10px}img{max-width:100%;height:auto;border-radius:4px}</style>
+</head><body>
+<h1>要件定義書（ドラフト）</h1>
+<h2>アプリ名</h2>
+<p>「ゆる募」（暫定採用。公開前にストア検索・商標検索で最終確認する）</p>
+<p><strong>キャッチコピー</strong>：「ゆるく貼って、そっと集まる。」</p>
+<hr>
+<h2>1. 背景・課題</h2>
+<ul>
+<li>遊びや食事、趣味の集まりなどに人を誘いたいが、「断られたらどうしよう」という不安から誘えない人が多い。</li>
+<li>直接LINEやメッセージで1対1に声をかけると、相手にとっても「断りづらい」「気を遣う」という負担が生まれる。</li>
+<li>既存のマッチングアプリ・SNSの多くは「恋愛・出会い」や「不特定多数への公開募集」が前提で、身近な人間関係の中で気軽に使えるものが少ない。</li>
+</ul>
+<h2>2. アプリのコンセプト</h2>
+<p><strong>「誘う人も、誘われる人も、断る／断られるストレスを感じない」仲間集めアプリ。</strong></p>
+<p>ポイントは以下の設計思想。</p>
+<ul>
+<li>誘いは「特定の1人」に向けたものではなく、「興味がある人だけが反応する」ゆるい形にする。</li>
+<li>誘われた側は「既読」「未反応」がわかりにくい・気にならない設計にし、無反応でも角が立たない。</li>
+<li>誘った側も「誰が見て断ったか」がわからないようにし、拒否された感覚を持たせない。</li>
+<li><strong>投稿者（誘った人）の名前も、マッチング成立前は完全に非表示にする</strong>。見ている側にも「グループの誰かが誘っている」ということしか分からない、双方向の匿名設計にする（確定）。</li>
+</ul>
+<h2>3. ターゲットユーザー</h2>
+<ul>
+<li>誘うのが苦手・断られるのが怖いと感じている人（学生〜社会人まで幅広く）</li>
+<li>友人・知人・サークル・職場など、ある程度関係性がある人同士での「ゆるい予定合わせ」をしたい人</li>
+<li>恋愛目的ではなく、趣味・食事・遊びなど日常の予定を一緒にする仲間を探したい人</li>
+</ul>
+<h2>4. 主要機能（案）</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>機能名</th>
+<th>概要</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>ゆる募集投稿</td>
+<td>「今週末カラオケ行ける人〜」のように、誰に向けてかを指定せず募集を投稿できる</td>
+</tr>
+<tr>
+<td>2</td>
+<td>グループ／コミュニティ単位の公開範囲設定</td>
+<td>募集を見せる相手を「友人リスト全体」「特定のグループ」などに限定できる。グループのメンバーは<strong>電話帳の連絡先から選んで作成する</strong>（LINEグループの読み込みは行わない）。グループの<strong>作成・名前変更・メンバー追加／削除・グループ削除</strong>をすべて備える（電話帳アプリのような操作感）</td>
+</tr>
+<tr>
+<td>3</td>
+<td>そっと反応（挙手制）</td>
+<td>興味がある人だけが「参加する」ボタンを押す。押さなかった人には何の通知も表示も残らない</td>
+</tr>
+<tr>
+<td>4</td>
+<td>匿名段階マッチング</td>
+<td>投稿者・反応者ともにプロフィールを明かさず「気になってる人が◯人います」とだけ表示し、開催が確定してから初めて参加メンバーの顔ぶれが見える</td>
+</tr>
+<tr>
+<td>5</td>
+<td>既読・拒否表示の非表示化</td>
+<td>誰が見たか・誰が反応しなかったかは投稿者にも一切わからない仕様</td>
+</tr>
+<tr>
+<td>6</td>
+<td>自動クローズ機能</td>
+<td>開催人数に達した時点で即座に「開催確定」とし、通知を送る。<strong>期日までに人数が揃わなかった場合は、誰にも通知せず静かに募集を終了する</strong>（催促や気まずさを防ぐ）</td>
+</tr>
+<tr>
+<td>7</td>
+<td>予定の自動チャット化</td>
+<td>参加者が確定したら、その場で専用グループチャットが自動生成される</td>
+</tr>
+<tr>
+<td>8</td>
+<td>開催確定時のみの通知</td>
+<td>通知は「開催が確定した時」だけ送る。途中経過（反応が増えた等）の通知は行わない。ただし<strong>画面上の「気になってる人：◯人」という人数表示は残す</strong>（通知とは別扱い）</td>
+</tr>
+<tr>
+<td>9</td>
+<td>開催決定後の不参加連絡</td>
+<td>参加できなくなった人が自分でひと言入力できる。表示先は参加希望者全員（グループトークのメンバー）のみで、反応していない人には一切見えない</td>
+</tr>
+</tbody>
+</table>
+<h2>5. 非機能要件（案）</h2>
+<ul>
+<li><strong>対応プラットフォーム</strong>：iPhone・Android両対応</li>
+<li><strong>収益化方針</strong>：まずは広告なし・完全無料の個人開発アプリとしてリリース（将来的な収益化は別途検討）</li>
+<li><strong>開発規模</strong>：個人開発・最小構成でまず動くものを目指す（MVP優先）</li>
+<li><strong>MVPの範囲</strong>：本書に記載の機能（上記1〜9）と画面（下記1〜5）までとする</li>
+<li><strong>プライバシー</strong>：反応した／しなかった情報は本人以外に一切開示しない設計を最優先とする</li>
+<li><strong>開発環境</strong>：Expo（React Native）＋ TypeScript</li>
+<li><strong>バックエンド</strong>：Firebase（Firestore／Cloud Functions／Authentication）</li>
+<li><strong>ログイン方法</strong>：電話番号によるSMS認証</li>
+<li><strong>電話帳アクセス拒否時の代替</strong>：①アクセス許可前に説明画面を表示 ②拒否時は電話番号の手入力または設定を開くボタンを用意 ③電話帳で選んだ相手が未登録の場合は招待（SMS・共有）を送れる</li>
+<li><strong>アカウント・データの削除機能</strong>：アプリ内に実装（ストア審査対応として必須）</li>
+</ul>
+<h2>6. 想定される画面（ラフ）</h2>
+<p>デザインの方向性は「案5：手書き・コルクボード」（付箋風カード・コルクボードのような温かみのある見た目）に決定。</p>
+<ol>
+<li>ホーム画面（自分の募集一覧・参加中の予定一覧）</li>
+<li>募集作成画面（タイトル・日時・場所・公開範囲・開催人数を設定）</li>
+<li>募集詳細画面（投稿者本人にも人数のみ表示、名前は誰にも見えない）</li>
+<li>確定後のグループチャット画面（開催決定時にメンバーの顔ぶれが初めて見える）</li>
+<li>見せる相手グループの一覧・作成画面（電話帳の連絡先からメンバーを選んでグループを作る）</li>
+</ol>
+<h2>7. 今後決めること（要検討事項）</h2>
+<ul>
+<li>ストア公開の準備（Apple Developer Program／Google Play Consoleのアカウント準備。公開が近づいたら手順を案内）</li>
+</ul>
+<hr>
+<blockquote>
+<p>主要な仕様は確定しました。残るのはストア公開の準備のみです。実装フェーズに進む際は、このドキュメントと画面デザイン（キャンバス）をあわせて参照してください。</p>
+</blockquote>
+
+</body></html>

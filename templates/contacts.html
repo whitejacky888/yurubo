@@ -1,0 +1,54 @@
+{#
+  電話帳（連絡先）の画面
+  Web アプリではスマホ本体の連絡先を読めないため、ここで登録した人を電話帳として使います。
+#}
+{% extends "base.html" %}
+{% from "macros.html" import csrf_field %}
+{# 名前を JavaScript に入れるときは | tojson を使うと、記号が入っていても安全です #}
+{% block title %}電話帳｜ゆる募{% endblock %}
+{% block content %}
+  <h1>電話帳</h1>
+
+  {% if current_user.contacts_permission != 'allowed' %}
+    <div class="card">
+      <p>電話帳へのアクセスは許可されていません。</p>
+      <p class="sub">グループのメンバーは、電話番号の手入力で追加できます。</p>
+      <a class="btn" href="{{ url_for('contacts_permission', next=url_for('contacts')) }}">設定を開く</a>
+    </div>
+  {% else %}
+    <form method="post" class="card">
+      {{ csrf_field() }}
+      <input type="hidden" name="action" value="add">
+      <label>連絡先を追加</label>
+      <div class="row">
+        <input type="text" name="name" maxlength="20" placeholder="なまえ" required>
+        <input type="tel" name="phone" placeholder="090-1234-5678" required>
+      </div>
+      <button class="btn sage block">追加する</button>
+    </form>
+
+    <div class="card">
+      <ul class="check-list">
+        {% for c in contacts %}
+          <li>
+            <span class="grow">{{ c.name }}<br><span class="sub">{{ c.phone }}</span></span>
+            {% if c.registered %}
+              <span class="badge sage">ゆる募を利用中</span>
+            {% else %}
+              <a class="badge coral" href="{{ invite_sms_link(c.phone) }}">招待する</a>
+            {% endif %}
+            <form method="post" class="inline" onsubmit='return confirm({{ (c.name ~ " さんを電話帳から削除しますか？") | tojson }})'>
+              {{ csrf_field() }}
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="contact_id" value="{{ c.id }}">
+              <button class="btn plain small">削除</button>
+            </form>
+          </li>
+        {% else %}
+          <li class="sub">まだ連絡先がありません。</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <p class="center sub"><a href="{{ url_for('contacts_permission', next=url_for('contacts')) }}">電話帳へのアクセス設定</a></p>
+  {% endif %}
+{% endblock %}

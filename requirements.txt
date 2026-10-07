@@ -1,0 +1,5 @@
+# このアプリを動かすのに必要なライブラリ
+# pip install -r requirements.txt でまとめてインストールできます
+Flask>=3.0
+# テスト用（tests フォルダのテストを動かすときに使います）
+pytest>=8.0

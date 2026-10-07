@@ -1,0 +1,54 @@
+{#
+  macros.html ― 何度も使う部品をまとめたファイル
+  マクロは「HTML 版の関数」のようなものです。
+  使う側では {% from "macros.html" import csrf_field %} と書いて読み込みます。
+#}
+
+{# フォームに必ず入れる「合言葉」（CSRF 対策）の隠し入力欄 #}
+{% macro csrf_field() -%}
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- endmacro %}
+
+{# アイコン（絵文字）を選ぶラジオボタンの一覧 #}
+{% macro icon_picker(icons, selected) -%}
+  <div class="icon-choices">
+    {% for icon in icons %}
+      <label>
+        <input type="radio" name="icon" value="{{ icon }}" {{ 'checked' if icon == selected }}>
+        <span>{{ icon }}</span>
+      </label>
+    {% endfor %}
+  </div>
+{%- endmacro %}
+
+{# 電話帳から選ぶチェックボックス＋電話番号の手入力欄（グループ作成・メンバー追加で共通） #}
+{% macro member_picker(contacts, exclude_phones=[]) -%}
+  {% if current_user.contacts_permission == 'allowed' %}
+    <label>電話帳から選ぶ</label>
+    {% set choices = contacts | rejectattr('phone', 'in', exclude_phones) | list %}
+    {% if choices %}
+      <ul class="check-list">
+        {% for c in choices %}
+          <li>
+            <input type="checkbox" name="contact_ids" value="{{ c.id }}" id="c{{ c.id }}">
+            <label for="c{{ c.id }}" class="grow" style="margin:0;font-weight:400">{{ c.name }}</label>
+            {% if not c.registered %}<span class="badge coral">未登録</span>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="sub">選べる連絡先がありません。<a href="{{ url_for('contacts') }}">電話帳</a>に追加できます。</p>
+    {% endif %}
+  {% else %}
+    <p class="sub">
+      電話帳へのアクセスは許可されていません。下の欄に電話番号を入力して追加できます。
+      <a href="{{ url_for('contacts_permission', next=request.path) }}">設定を開く</a>
+    </p>
+  {% endif %}
+
+  <label>電話番号を手で入力する（任意）</label>
+  <div class="row">
+    <input type="text" name="manual_name" placeholder="なまえ" maxlength="20">
+    <input type="tel" name="manual_phone" placeholder="090-1234-5678">
+  </div>
+{%- endmacro %}

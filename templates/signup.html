@@ -1,0 +1,22 @@
+{# 画面：はじめての人のプロフィール登録 #}
+{% extends "base.html" %}
+{% from "macros.html" import csrf_field, icon_picker %}
+{% block title %}はじめまして｜ゆる募{% endblock %}
+{% block content %}
+  <h1>はじめまして！</h1>
+  <p class="sub">名前とアイコンは、開催が決まったときに、一緒に行くメンバーにだけ表示されます。</p>
+  <form method="post" class="card">
+    {{ csrf_field() }}
+    <label for="name">表示名</label>
+    <input type="text" id="name" name="name" maxlength="20" placeholder="例：たろう" required>
+
+    <label>アイコン</label>
+    {{ icon_picker(icons, icons[0]) }}
+
+    <label style="font-weight:400">
+      <input type="checkbox" name="agree">
+      <a href="{{ url_for('terms') }}" target="_blank">利用規約・プライバシーポリシー</a>に同意します
+    </label>
+    <button class="btn block">はじめる</button>
+  </form>
+{% endblock %}

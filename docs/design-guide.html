@@ -1,0 +1,137 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}</style><style>:root{color-scheme:light dark;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}}:root[data-theme="dark"]{color-scheme:dark;--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}:root[data-theme="light"]{color-scheme:light}@media print{:root,:root[data-theme="dark"]{color-scheme:light;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}}body{background:var(--md-bg);color:var(--md-text);max-width:720px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:10px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'SF Pro','Segoe UI',sans-serif;overflow-wrap:break-word}body>:first-child{margin-top:0}h1,h2,h3,h4,h5,h6{margin:6px 0 0;line-height:1.25;font-weight:600;text-wrap:balance}h1{font-size:1.35em}h2{font-size:1.15em;color:var(--md-muted)}h3,h4,h5,h6{font-size:1em}p,ul,ol,blockquote,table,pre,hr{margin:0}strong{font-weight:600}a{color:var(--md-link);text-decoration:none}a:hover{text-decoration:underline}ul,ol{display:flex;flex-direction:column;gap:6px;padding-left:22px}ul{list-style:disc}ol{list-style:decimal}:is(li,td,th)>*+:is(p,ul,ol,blockquote){margin-top:6px}blockquote{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--md-rule);padding-left:10px;color:var(--md-muted)}:not(pre)>code{background:var(--md-fill);padding:1px 3px;border-radius:4px;font:.92em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}a>code{background:none;color:inherit}pre{background:var(--md-fill);padding:10px 12px;border-radius:6px;overflow-x:auto;font:12px/1.5 'SF Mono',ui-monospace,Menlo,Consolas,monospace;margin-block:4px}pre code{background:none;padding:0;font:inherit}table{width:100%;border-collapse:separate;border-spacing:2px;font:inherit}th,td{padding:6px 8px;border-radius:3px;text-align:left;vertical-align:top}th{background:var(--md-fill-strong);font-weight:600}td{background:var(--md-fill)}:is(th,td) :not(pre)>code{background:transparent}hr{border:0;border-top:1px solid var(--md-rule-strong);margin-block:10px}img{max-width:100%;height:auto;border-radius:4px}</style>
+</head><body>
+<h1>デザインガイド（案5：手書き・コルクボード）</h1>
+<p>「ゆる募」の画面デザインは、5案のうち <strong>案5：手書き・コルクボード</strong> に決定しています。
+Claude Codeに実装を依頼する際は、他の案（1〜4）は無視して、このガイドと画面スクリーンショットだけを渡してください。</p>
+<hr>
+<h2>1. トーン</h2>
+<p>コルクボードに付箋を貼るような、あたたかみのある手書き風。角のとがったデジタル感をあえて避け、少し斜めに傾いたカードやピンで「掲示板にそっと貼る」感覚を表現する。</p>
+<h2>2. フォント</h2>
+<ul>
+<li><strong>書体</strong>：Klee One（Google Fonts / 日本語手書き風フォント）</li>
+<li>見出し・本文とも同じ書体で統一。ウェイトは通常400、強調は600。</li>
+<li>React Native実装時は <code>expo-font</code> などでGoogle Fontsを読み込む。</li>
+</ul>
+<h2>3. カラーパレット</h2>
+<table>
+<thead>
+<tr>
+<th>用途</th>
+<th>色名</th>
+<th>HEX</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>背景（コルクボード）</td>
+<td>ベージュ</td>
+<td><code>#F1E4C8</code></td>
+</tr>
+<tr>
+<td>カード背景（白系サーフェス）</td>
+<td>オフホワイト</td>
+<td><code>#FBF4E4</code></td>
+</tr>
+<tr>
+<td>付箋カラー1（黄）</td>
+<td>イエロー</td>
+<td><code>#FFE9A8</code></td>
+</tr>
+<tr>
+<td>付箋カラー2（オレンジ系）</td>
+<td>コーラル</td>
+<td><code>#F8C9B4</code></td>
+</tr>
+<tr>
+<td>付箋カラー3（緑系）</td>
+<td>セージグリーン</td>
+<td><code>#CFE3C4</code></td>
+</tr>
+<tr>
+<td>文字・線（メインインク）</td>
+<td>ダークブラウン</td>
+<td><code>#4E3B27</code></td>
+</tr>
+<tr>
+<td>補助テキスト</td>
+<td>ライトブラウン</td>
+<td><code>#8C7454</code></td>
+</tr>
+<tr>
+<td>プレースホルダー文字</td>
+<td>くすみベージュ</td>
+<td><code>#B49B76</code></td>
+</tr>
+<tr>
+<td>画鋲（ピン）のアクセント</td>
+<td>レッド</td>
+<td><code>#C0392B</code></td>
+</tr>
+</tbody>
+</table>
+<h2>4. コンポーネントの特徴</h2>
+<ul>
+<li><strong>付箋カード</strong>：角丸4px、2px境界線（<code>#4E3B27</code>）、わずかな回転（-2deg〜1.5deg程度）でランダム感を出す。上部中央に丸い画鋲アイコンを配置。影は柔らかく（<code>2px 4px 8px rgba(78,59,39,0.18)</code>程度）。</li>
+<li><strong>ボタン</strong>：角丸の大きいピル型（<code>border-radius: 9999px</code>）、2px境界線、塗りは付箋カラーのいずれか。</li>
+<li><strong>入力欄</strong>：角丸6px、2px境界線、背景はオフホワイト。</li>
+<li><strong>アイコン</strong>：線画（ストローク）のシンプルなアウトラインアイコン、線幅は太め（1.8〜2.4px）。</li>
+<li><strong>ボトムナビゲーション</strong>：画面下部固定、上部に2px境界線、アイコン＋短いラベルの組み合わせ。</li>
+<li><strong>FAB（＋ボタン）</strong>：円形、直径56〜58px、2px境界線、少し傾ける（-4deg程度）ことでアクセントに。</li>
+</ul>
+<h2>5. 画面一覧（案5で確定している6画面）</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>画面名</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>ホーム画面</td>
+<td>自分宛の「ゆる募集」一覧を付箋カードで表示。各カードにタイトル・日時・「気になってる人：◯人」を表示（投稿者名は非表示）</td>
+</tr>
+<tr>
+<td>2</td>
+<td>誘いをつくる（募集作成）</td>
+<td>タイトル・日時・場所・公開範囲（グループ選択）・開催人数を入力</td>
+</tr>
+<tr>
+<td>3</td>
+<td>募集の詳細（投稿者本人視点）</td>
+<td>集まり具合（◯/◯人）のみ表示。投稿者にも反応者の名前は見えない</td>
+</tr>
+<tr>
+<td>4</td>
+<td>開催決定後のグループトーク</td>
+<td>人数が揃うと自動生成。ここで初めてメンバーの名前・アイコンが見える</td>
+</tr>
+<tr>
+<td>5</td>
+<td>見せる相手グループの一覧</td>
+<td>登録済みグループ（電話帳連携）を付箋カードで表示。「＋新しいグループを作る」あり</td>
+</tr>
+<tr>
+<td>6</td>
+<td>新しいグループを作る</td>
+<td>グループ名の入力＋電話帳の連絡先からチェックボックスで複数選択</td>
+</tr>
+</tbody>
+</table>
+<h2>6. React Native実装時の注意</h2>
+<ul>
+<li>上記はWebのモックアップ（HTML/CSS）のため、React Native（Expo）で作る際はスタイルの意図（配色・角丸・余白感・傾き）を再現する形で構わない。DOM構造をそのまま移植する必要はない。</li>
+<li>「投稿者・反応者の匿名表示」「気になってる人数のみの表示」は見た目だけでなく、要件定義書のデータ設計（サーバー側で情報を渡さない）とセットで実装すること。</li>
+</ul>
+<hr>
+<h2>渡し方（Claude Codeへの持ち込み手順）</h2>
+<ol>
+<li>このファイルをプロジェクトの <code>docs/design-guide.md</code> などに保存する。</li>
+<li>案5の6画面（上記表）を、キャンバス上でスクリーンショットして <code>docs/screens/</code> に保存する（他の案1〜4は不要）。</li>
+<li>要件定義書（<code>要件定義書_断られる不安を軽減する仲間集めアプリ.md</code>）も同じ <code>docs/</code> フォルダに保存する。</li>
+<li>Claude Codeを開き、「<code>docs/</code>の要件定義書とデザインガイド、画面スクリーンショットの通りに、Expo＋TypeScriptでプロジェクトを作って」と伝える。</li>
+</ol>
+
+</body></html>

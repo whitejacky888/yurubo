@@ -1,0 +1,75 @@
+{#
+  画面 6：新しいグループを作る ／ グループの編集
+  group が None なら「新規作成」、そうでなければ「編集」として表示します。
+#}
+{% extends "base.html" %}
+{# with context を付けると、マクロの中でも current_user や request が使えます #}
+{% from "macros.html" import csrf_field, member_picker with context %}
+{% block title %}グループ｜ゆる募{% endblock %}
+{% block content %}
+  <p><a href="{{ url_for('groups') }}">← グループ一覧</a></p>
+
+  {% if group is none %}
+    {# ---------- 新規作成 ---------- #}
+    <h1>新しいグループを作る</h1>
+    <form method="post" class="card">
+      {{ csrf_field() }}
+      <label for="name">グループ名</label>
+      <input type="text" id="name" name="name" maxlength="20" placeholder="例：大学のなかま" required>
+      {{ member_picker(contacts) }}
+      <button class="btn coral block">グループを作る</button>
+    </form>
+
+  {% else %}
+    {# ---------- 編集 ---------- #}
+    <h1>{{ group.name }}</h1>
+
+    <form method="post" class="card">
+      {{ csrf_field() }}
+      <input type="hidden" name="action" value="rename">
+      <label for="name">グループ名を変える</label>
+      <div class="row">
+        <input type="text" id="name" name="name" maxlength="20" value="{{ group.name }}" required>
+        <button class="btn small" style="flex:0">変更</button>
+      </div>
+    </form>
+
+    <h2>メンバー（{{ members | length }}人）</h2>
+    <div class="card">
+      <ul class="check-list">
+        {% for m in members %}
+          <li>
+            <span class="grow">{{ m.name }}</span>
+            {% if not m.registered %}
+              {# まだアプリを使っていない人には、SMS で招待を送れます #}
+              <a class="badge coral" href="{{ invite_sms_link(m.phone) }}">招待する</a>
+            {% endif %}
+            <form method="post" class="inline">
+              {{ csrf_field() }}
+              <input type="hidden" name="action" value="remove">
+              <input type="hidden" name="phone" value="{{ m.phone }}">
+              <button class="btn plain small">外す</button>
+            </form>
+          </li>
+        {% else %}
+          <li class="sub">メンバーがいません。</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <h2>メンバーを追加</h2>
+    <form method="post" class="card">
+      {{ csrf_field() }}
+      <input type="hidden" name="action" value="add">
+      {# すでにメンバーの人は、選択肢から外して表示します #}
+      {{ member_picker(contacts, members | map(attribute='phone') | list) }}
+      <button class="btn sage block">追加する</button>
+    </form>
+
+    <form method="post" action="{{ url_for('delete_group', group_id=group.id) }}"
+          onsubmit='return confirm({{ ("グループ「" ~ group.name ~ "」を削除しますか？") | tojson }})'>
+      {{ csrf_field() }}
+      <button class="btn danger small">このグループを削除</button>
+    </form>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,60 @@
+{#
+  画面 3：募集の詳細
+  ★ 投稿者にも、反応した人の名前は見えません（人数だけ）。
+  ★ 投稿者以外にも、投稿者の名前は見えません。
+#}
+{% extends "base.html" %}
+{% from "macros.html" import csrf_field %}
+{% block title %}{{ post.title }}｜ゆる募{% endblock %}
+{% block content %}
+  <p><a href="{{ url_for('home') }}">← ボードにもどる</a></p>
+
+  <div class="sticky" style="{{ sticky_style(post.id) }}">
+    <h3>{{ post.title }}</h3>
+    <p class="meta">🗓 {{ post.event_at | pretty_datetime }}</p>
+    {% if post.place %}<p class="meta">📍 {{ post.place }}</p>{% endif %}
+    <p class="meta">⏳ 締切 {{ post.deadline | pretty_datetime }}</p>
+  </div>
+
+  {% if post.status == 'closed' %}
+    {# ここに来られるのは投稿者本人だけ（app.py で制御） #}
+    <div class="card">
+      <p>この募集は、そっと終了しました。</p>
+      <p class="sub">誰にも通知は送られていません。気が向いたら、また気軽に貼ってみてください。</p>
+    </div>
+
+  {% elif is_author %}
+    <div class="card">
+      <h3>集まり具合</h3>
+      {% set gathered = 1 + post.interested %}
+      <p style="font-size:1.6rem;margin:0">{{ gathered }} / {{ post.capacity }}人</p>
+      {# メーターの長さを % で計算します #}
+      <div class="meter"><div style="width:{{ (gathered / post.capacity * 100) | round }}%"></div></div>
+      <p class="sub">誰が見たか・誰が反応したかは、あなたにも分かりません。人数が揃ったらお知らせします。</p>
+    </div>
+    <form method="post" action="{{ url_for('withdraw', post_id=post.id) }}"
+          onsubmit="return confirm('この募集をそっと取り下げますか？（誰にも通知されません）')">
+      {{ csrf_field() }}
+      <button class="btn plain small">募集を取り下げる</button>
+    </form>
+
+  {% else %}
+    <div class="card">
+      <p style="font-size:1.2rem;margin:0">気になってる人：{{ post.interested }}人</p>
+      <p class="sub">グループの誰かが誘っています。名前は開催が決まるまで、お互いに見えません。</p>
+      {% if reacted %}
+        <p>✋ 手を挙げています。人数が揃ったらお知らせします。</p>
+        <form method="post" action="{{ url_for('unreact', post_id=post.id) }}">
+          {{ csrf_field() }}
+          <button class="btn plain small">やっぱりやめる</button>
+        </form>
+      {% else %}
+        <form method="post" action="{{ url_for('react', post_id=post.id) }}">
+          {{ csrf_field() }}
+          <button class="btn sage block">✋ 参加する</button>
+        </form>
+        <p class="sub center">押さなくても、誰にも何も伝わりません。</p>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endblock %}
