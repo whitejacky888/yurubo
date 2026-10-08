@@ -1,0 +1,18 @@
+{
+  // TypeScript の設定（サーバー側）
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2022",
+    "lib": ["es2022"],
+    "types": ["node"],
+    "outDir": "lib",
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "noUnusedLocals": true
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

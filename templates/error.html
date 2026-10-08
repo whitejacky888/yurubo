@@ -1,9 +1,0 @@
-{# 画面：エラー（ページが見つからない等） #}
-{% extends "base.html" %}
-{% block content %}
-  <div class="sticky paper" style="{{ sticky_style(1, color=False) }} margin-top:60px">
-    <h3>{{ message }}</h3>
-    <p class="meta">募集が終わったか、見られない場所かもしれません。</p>
-  </div>
-  <p class="center"><a class="btn" href="{{ url_for('home') }}">ボードにもどる</a></p>
-{% endblock %}

@@ -1,0 +1,110 @@
+rules_version = '2';
+
+// =====================================================================
+// firestore.rules ― データベースの「鍵」の設定（セキュリティルール）
+// =====================================================================
+// アプリ（スマホ）から Firestore を読み書きするときに、
+// 「誰が」「どのデータを」「読める／書ける」かをここで決めます。
+// ここで許可していないことは、アプリを改造してもできません。
+//
+// ★ 匿名設計のポイント
+//   posts（募集）は、アプリから一切読めないようにしています。
+//   募集は必ずサーバー（functions/src/index.ts）を通して「人数だけ」を受け取ります。
+//   こうすることで「誰が投稿したか」「誰が反応したか」が絶対に漏れません。
+// =====================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- 共通で使う小さなチェック ----------
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isMe(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+    function validName(value) {
+      return value is string && value.size() >= 1 && value.size() <= 20;
+    }
+    function validIcon(value) {
+      return value is string && value.size() >= 1 && value.size() <= 8;
+    }
+
+    // ---------- 利用者のプロフィール ----------
+    match /users/{uid} {
+      // 自分のプロフィールは自分だけが読める（他の人の名前は、開催確定後のトークでだけ見える）
+      allow read: if isMe(uid);
+
+      // はじめての登録。電話番号は「ログインした番号」と同じでないとダメ
+      allow create: if isMe(uid)
+        && request.resource.data.keys().hasOnly(['name', 'icon', 'phone', 'createdAt'])
+        && validName(request.resource.data.name)
+        && validIcon(request.resource.data.icon)
+        && request.resource.data.phone == request.auth.token.phone_number;
+
+      // 変えてよいのは、名前・アイコン・プッシュ通知用のトークンだけ（電話番号は変えられない）
+      allow update: if isMe(uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['name', 'icon', 'expoPushToken'])
+        && validName(request.resource.data.name)
+        && validIcon(request.resource.data.icon);
+
+      // 削除はサーバーの deleteAccount 関数だけが行う
+      allow delete: if false;
+
+      // お知らせ：自分のものだけ読めて、「既読にする」ことだけできる
+      match /notifications/{notificationId} {
+        allow read: if isMe(uid);
+        allow update: if isMe(uid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+      }
+    }
+
+    // ---------- 見せる相手グループ ----------
+    // グループは作った人だけのもの。メンバーの名前は作った人の電話帳での呼び名なので、
+    // メンバー本人を含め、他の人には見せません。
+    function validGroup() {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['ownerId', 'name', 'members', 'memberPhones', 'createdAt', 'updatedAt'])
+        && data.ownerId == request.auth.uid
+        && validName(data.name)
+        && data.members is list && data.members.size() <= 100
+        && data.memberPhones is list && data.memberPhones.size() == data.members.size();
+    }
+    match /groups/{groupId} {
+      allow read, delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if signedIn() && validGroup();
+      allow update: if signedIn() && resource.data.ownerId == request.auth.uid && validGroup();
+    }
+
+    // ---------- 募集（アプリからは一切さわれない） ----------
+    match /posts/{document=**} {
+      allow read, write: if false;
+    }
+
+    // ---------- 開催確定後のグループトーク ----------
+    function isChatMember(chatId) {
+      return signedIn()
+        && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.memberIds;
+    }
+    match /chats/{chatId} {
+      // トークの情報（メンバーの名前など）は、メンバーだけが読める。作るのはサーバーだけ
+      allow read: if signedIn() && request.auth.uid in resource.data.memberIds;
+      allow write: if false;
+
+      match /messages/{messageId} {
+        allow read: if isChatMember(chatId);
+        // メッセージを送れるのはメンバーだけ。「自分として」しか送れず、日時はサーバーの時刻
+        allow create: if isChatMember(chatId)
+          && request.resource.data.keys().hasOnly(['userId', 'body', 'kind', 'createdAt'])
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.kind in ['normal', 'absence']
+          && request.resource.data.body is string
+          && request.resource.data.body.size() >= 1
+          && request.resource.data.body.size() <= 500
+          && request.resource.data.createdAt == request.time;
+        allow update, delete: if false;
+      }
+    }
+  }
+}

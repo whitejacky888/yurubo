@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "ゆる募",
+    "slug": "yurubo",
+    "scheme": "yurubo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "com.example.yurubo",
+      "supportsTablet": false,
+      "googleServicesFile": "./GoogleService-Info.plist"
+    },
+    "android": {
+      "package": "com.example.yurubo",
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "backgroundColor": "#F1E4C8",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      [
+        "expo-build-properties",
+        {
+          "ios": { "useFrameworks": "dynamic" }
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "backgroundColor": "#F1E4C8"
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "グループのメンバーを連絡先から選ぶために使います。保存するのは、あなたが選んだ人の名前と電話番号だけです。"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#C0392B"
+        }
+      ]
+    ]
+  }
+}
