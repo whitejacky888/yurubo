@@ -31,11 +31,12 @@ import {
   DocumentReference,
   DocumentSnapshot,
   FieldValue,
+  Firestore,
   Timestamp,
   getFirestore,
 } from 'firebase-admin/firestore';
 import * as logger from 'firebase-functions/logger';
-import { setGlobalOptions } from 'firebase-functions/v2';
+import { onInit, setGlobalOptions } from 'firebase-functions/v2';
 import { CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 
@@ -54,8 +55,15 @@ import {
 // ---------------------------------------------------------------------------
 // 準備
 // ---------------------------------------------------------------------------
-initializeApp(); // Firebase の管理者用 SDK を使えるようにする
-const db = getFirestore();
+// Firebase の管理者用 SDK の準備は、onInit の中で行います。
+// デプロイのとき、Firebase CLI はこのファイルを読み込んで「どんな関数があるか」を調べますが、
+// ファイルの一番外側で重い準備をすると、その読み込みが時間切れになることがあるためです。
+// onInit の中身は、関数が本当に動き出すときに 1 回だけ実行されます。
+let db!: Firestore; // ! は「使う前に必ず中身が入る」という TypeScript への約束
+onInit(() => {
+  initializeApp();
+  db = getFirestore();
+});
 
 // すべての関数を東京リージョン（asia-northeast1）で動かします。
 // 利用者の近くで動かすと、反応が速くなります。
