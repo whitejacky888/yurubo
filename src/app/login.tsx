@@ -40,7 +40,7 @@ export default function LoginScreen() {
       setConfirmation(await signInWithPhoneNumber(auth, e164));
     } catch (error) {
       console.warn(error);
-      Alert.alert('SMS を送れませんでした', '電話番号を確かめて、少し時間をおいてお試しください。');
+      Alert.alert('SMS を送れませんでした', authErrorHint(error));
     } finally {
       setBusy(false);
     }
@@ -53,8 +53,9 @@ export default function LoginScreen() {
     try {
       await confirmation.confirm(code.trim());
       // ここで成功すると、AuthProvider がログインを検知して画面が切り替わります
-    } catch {
-      Alert.alert('コードが違うか、有効期限が切れています');
+    } catch (error) {
+      console.warn(error);
+      Alert.alert('コードが違うか、有効期限が切れています', authErrorHint(error));
     } finally {
       setBusy(false);
     }
@@ -108,6 +109,29 @@ export default function LoginScreen() {
       </Txt>
     </Screen>
   );
+}
+
+/**
+ * ログインのエラーから、原因の説明を作ります。
+ * Firebase のエラーには "auth/〜" という「エラーの種類（コード）」が入っているので、
+ * よくあるものは日本語で説明し、最後にコードそのものも表示します（原因を調べるときの手がかり）。
+ */
+function authErrorHint(error: unknown): string {
+  const code = (error as { code?: string } | null)?.code ?? '不明';
+  const hints: Record<string, string> = {
+    'auth/invalid-phone-number': '電話番号の形が正しくありません。',
+    'auth/missing-client-identifier':
+      'アプリの確認に失敗しました。Firebase に SHA-1 / SHA-256 が登録されているか、登録後にビルドし直したかを確認してください。',
+    'auth/app-not-authorized':
+      'このアプリが Firebase に登録されていません。パッケージ名と google-services.json、SHA の登録を確認してください。',
+    'auth/operation-not-allowed': 'Firebase で電話番号ログインが有効になっていません。',
+    'auth/too-many-requests': '短い時間に何度も試したため、一時的に止められています。しばらく待ってから試してください。',
+    'auth/quota-exceeded': 'SMS の送信回数の上限に達しました。',
+    'auth/invalid-verification-code': '確認コードが違います。',
+    'auth/session-expired': '確認コードの有効期限が切れました。もう一度コードを送ってください。',
+    'auth/network-request-failed': '通信できませんでした。インターネットの接続を確認してください。',
+  };
+  return `${hints[code] ?? '少し時間をおいてお試しください。'}\n\n（エラーコード：${code}）`;
 }
 
 const styles = StyleSheet.create({
