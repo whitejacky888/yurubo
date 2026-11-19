@@ -2,7 +2,7 @@
  * (tabs)/settings.tsx ― じぶん（プロフィールの変更・ログアウト・アカウント削除）
  */
 import { signOut } from '@react-native-firebase/auth';
-import { doc, updateDoc } from '@react-native-firebase/firestore';
+import { deleteField, doc, updateDoc } from '@react-native-firebase/firestore';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
@@ -39,6 +39,18 @@ export default function SettingsScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  /**
+   * ログアウト。
+   * 先に「このスマホに通知を送る」登録（expoPushToken）を外します。
+   * 外さないと、ログアウトしたあとも、このスマホに前の人あての通知が届き続けてしまうためです。
+   */
+  const logout = async () => {
+    if (user) {
+      await updateDoc(doc(db, 'users', user.uid), { expoPushToken: deleteField() }).catch(() => {});
+    }
+    await signOut(auth);
   };
 
   /** アカウント削除（ストア審査で必須の機能）。元に戻せないので 2 回確認します */
@@ -82,7 +94,7 @@ export default function SettingsScreen() {
       <Card>
         <Txt variant="sub">電話番号：{profile ? displayPhone(profile.phone) : ''}</Txt>
         <Txt style={styles.link} onPress={() => router.push('/terms')}>利用規約・プライバシーポリシー</Txt>
-        <PillButton title="ログアウト" color="plain" small onPress={() => signOut(auth)} style={styles.logout} />
+        <PillButton title="ログアウト" color="plain" small onPress={logout} style={styles.logout} />
       </Card>
 
       <View style={styles.divider} />
