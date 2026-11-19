@@ -37,7 +37,7 @@ const ONE_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * 自分がメンバーになっている、開催確定済みのトークの一覧。
- * 開催日から 1 日たったもの（もう終わった予定）は除きます。
+ * 開催日から 1 日たったもの（もう終わった予定）と、中止になったものは除きます。
  */
 export function useMyChats(uid: string | undefined) {
   const [chats, setChats] = useState<Chat[]>([]);
@@ -56,9 +56,11 @@ export function useMyChats(uid: string | undefined) {
           place: data.place ?? '',
           memberIds: data.memberIds ?? [],
           members: data.members ?? {},
+          cancelled: data.cancelled === true,
         };
       });
-      setChats(list.filter((chat) => chat.eventAt > cutoff));
+      // 中止になった予定も、ホームの「開催が決まった予定」には出さない
+      setChats(list.filter((chat) => chat.eventAt > cutoff && !chat.cancelled));
     });
   }, [uid]);
   return chats;

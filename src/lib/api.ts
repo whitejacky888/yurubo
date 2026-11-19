@@ -51,6 +51,9 @@ export const api = {
   /** 募集を取り下げる（投稿者だけ） */
   withdrawPost: (postId: string) => call<{ postId: string }, { ok: true }>('withdrawPost', { postId }),
 
+  /** 開催確定のあと、開催を中止する（トークのメンバーだけ） */
+  cancelEvent: (postId: string) => call<{ postId: string }, { ok: true }>('cancelEvent', { postId }),
+
   /** 電話番号の人が「ゆる募」を使っているか調べる（使っている人の番号だけが返ってくる） */
   checkRegistered: (phones: string[]) =>
     call<{ phones: string[] }, { registered: string[] }>('checkRegistered', { phones }),

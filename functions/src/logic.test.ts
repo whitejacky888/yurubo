@@ -12,6 +12,7 @@ import {
   isExpired,
   isFull,
   normalizePhone,
+  retentionCutoff,
   toPublicPost,
   validatePostInput,
   type StoredPost,
@@ -93,4 +94,8 @@ test('アプリに返す募集には、投稿者の情報が入っていない�
 test('配列を分ける', () => {
   assert.deepEqual(chunk([1, 2, 3, 4, 5], 2), [[1, 2], [3, 4], [5]]);
   assert.deepEqual(chunk([], 30), []);
+});
+
+test('保存期間は開催日から 30 日', () => {
+  assert.equal(NOW - retentionCutoff(NOW), 30 * 24 * HOUR);
 });

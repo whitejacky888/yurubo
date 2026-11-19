@@ -5,8 +5,8 @@
  * 型を決めておくと、項目名の打ち間違いなどをエディタが教えてくれます。
  */
 
-/** 募集の状態：open=募集中 / confirmed=開催確定 / closed=静かに終了 */
-export type PostStatus = 'open' | 'confirmed' | 'closed';
+/** 募集の状態：open=募集中 / confirmed=開催確定 / closed=静かに終了 / cancelled=開催確定のあとに中止 */
+export type PostStatus = 'open' | 'confirmed' | 'closed' | 'cancelled';
 
 /**
  * サーバーから受け取る募集。
@@ -56,6 +56,7 @@ export interface Chat {
   place: string;
   memberIds: string[];
   members: Record<string, { name: string; icon: string }>; // { 利用者ID: { 名前, アイコン } }
+  cancelled: boolean; // 開催が中止になったら true
 }
 
 /** トークのメッセージ */

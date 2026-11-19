@@ -22,8 +22,17 @@ export const PLACE_MAX = 40;
 /** 1 つのグループに入れられる最大人数 */
 export const GROUP_MEMBERS_MAX = 100;
 
-/** 募集の状態：open=募集中 / confirmed=開催確定 / closed=静かに終了 */
-export type PostStatus = 'open' | 'confirmed' | 'closed';
+/** 開催日から何日たったら、トークなどのデータを自動で削除するか（プライバシーポリシーと同じ日数） */
+export const RETENTION_DAYS = 30;
+const DAY = 24 * 60 * 60 * 1000;
+
+/** この日時より前に開催された予定は、削除してよい（＝保存期間が過ぎた） */
+export function retentionCutoff(now: number): number {
+  return now - RETENTION_DAYS * DAY;
+}
+
+/** 募集の状態：open=募集中 / confirmed=開催確定 / closed=静かに終了 / cancelled=開催確定のあとに中止 */
+export type PostStatus = 'open' | 'confirmed' | 'closed' | 'cancelled';
 
 // ---------------------------------------------------------------------------
 // 電話番号

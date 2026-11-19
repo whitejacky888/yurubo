@@ -9,6 +9,11 @@
  * 【不参加連絡】「行けなくなった…と伝える」で送ると、不参加連絡として目立つ色で表示されます。
  *   このトークはメンバーにしか見えないので、反応しなかった人には一切伝わりません。
  *
+ * 【開催の中止】不参加などで人数が足りなくなったら、メンバーで相談して「開催を中止する」を押せます。
+ *   中止しても、トークはそのまま読めます（ホームの「開催が決まった予定」からは消えます）。
+ *
+ * 【保存期間】トークは開催日から 30 日たつと、サーバーが自動で削除します。
+ *
  * メッセージは onSnapshot で「監視」しているので、誰かが送るとすぐに表示されます。
  */
 import {
@@ -30,6 +35,7 @@ import { PillButton } from '../../components/PillButton';
 import { Screen } from '../../components/Screen';
 import { StickyCard } from '../../components/StickyCard';
 import { Txt } from '../../components/Txt';
+import { api, errorMessage } from '../../lib/api';
 import { db } from '../../lib/firebase';
 import { formatDateTime, formatShort } from '../../lib/format';
 import { toMillis } from '../../lib/hooks';
@@ -43,23 +49,35 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  // トークが見つからない（保存期間が過ぎて削除された、など）ときは true
+  const [missing, setMissing] = useState(false);
   const listRef = useRef<FlatList<Message>>(null);
 
   // トークの情報（タイトル・メンバー）を監視
   useEffect(
     () =>
-      onSnapshot(doc(db, 'chats', id), (snap) => {
-        const data = snap.data();
-        if (!data) return;
-        setChat({
+      onSnapshot(
+        doc(db, 'chats', id),
+        (snap) => {
+          const data = snap.data();
+          if (!data) {
+            setMissing(true);
+            return;
+          }
+          setChat({
           id: snap.id,
           title: data.title,
           eventAt: toMillis(data.eventAt) ?? 0,
           place: data.place ?? '',
           memberIds: data.memberIds ?? [],
           members: data.members ?? {},
+          cancelled: data.cancelled === true,
         });
-      }),
+        },
+        // 読めなかったとき（メンバーではなくなった、など）
+        () => setMissing(true),
+      ),
     [id],
   );
 
@@ -105,7 +123,38 @@ export default function ChatScreen() {
     }
   };
 
+  /** 開催を中止する（取り消せないので、確認してから） */
+  const confirmCancel = () =>
+    Alert.alert('開催を中止しますか？', 'メンバーみんなに「中止になりました」とお知らせが届きます。元には戻せません。', [
+      { text: 'やめる', style: 'cancel' },
+      {
+        text: '中止する',
+        style: 'destructive',
+        onPress: async () => {
+          setCancelling(true);
+          try {
+            await api.cancelEvent(id);
+          } catch (error) {
+            Alert.alert('中止できませんでした', errorMessage(error));
+          } finally {
+            setCancelling(false);
+          }
+        },
+      },
+    ]);
+
   const memberEntries = chat ? Object.entries(chat.members) : [];
+
+  if (missing) {
+    return (
+      <Screen edges={['bottom']}>
+        <StickyCard colorKey="missing-chat" paper>
+          <Txt variant="bold">このトークは見られません</Txt>
+          <Txt variant="sub">開催日から 30 日たったトークは、自動で削除されます。</Txt>
+        </StickyCard>
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll={false} edges={['bottom']}>
@@ -121,8 +170,9 @@ export default function ChatScreen() {
           chat ? (
             <View>
               <StickyCard colorKey={chat.id}>
-                <Txt variant="bold" style={styles.title}>🎉 {chat.title}</Txt>
+                <Txt variant="bold" style={styles.title}>{chat.cancelled ? '' : '🎉 '}{chat.title}</Txt>
                 <Txt variant="sub">🗓 {formatDateTime(chat.eventAt)}{chat.place ? `　📍 ${chat.place}` : ''}</Txt>
+                {chat.cancelled ? <Badge label="中止になりました" color="coral" /> : null}
               </StickyCard>
               <Txt variant="bold">メンバー</Txt>
               <View style={styles.members}>
@@ -137,6 +187,16 @@ export default function ChatScreen() {
                   </View>
                 ))}
               </View>
+              {chat.cancelled ? null : (
+                <PillButton
+                  title="開催を中止する"
+                  small
+                  color="plain"
+                  onPress={confirmCancel}
+                  loading={cancelling}
+                  style={styles.cancel}
+                />
+              )}
             </View>
           ) : null
         }
@@ -185,7 +245,9 @@ export default function ChatScreen() {
             disabled={sending || !body.trim()}
           />
         </View>
-        <Txt variant="small">「行けなくなった」は、このトークのメンバーにだけ届きます。</Txt>
+        <Txt variant="small">
+          「行けなくなった」は、このトークのメンバーにだけ届きます。人数が足りなくなったら、みんなで相談して「開催を中止する」を押せます。
+        </Txt>
       </View>
     </Screen>
   );
@@ -193,6 +255,7 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   list: { paddingVertical: 12, gap: 10 },
+  cancel: { marginTop: 4 },
   title: { fontSize: 18, lineHeight: 26 },
   members: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginVertical: 8 },
   member: { width: 72, alignItems: 'center' },

@@ -35,6 +35,8 @@ import {
 } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions, httpsCallable, type Functions } from 'firebase/functions';
 
+import { deleteEventsBefore } from '../src/cleanup';
+
 const PROJECT_ID = process.env.GCLOUD_PROJECT ?? 'demo-yurubo';
 const REGION = 'asia-northeast1';
 const HOUR = 60 * 60 * 1000;
@@ -224,6 +226,29 @@ test('不参加連絡はメンバーだけが送れて、なりすましはで�
   assert.equal(messages.docs.some((d) => d.get('kind') === 'absence'), true);
 });
 
+test('★ 開催確定後はメンバーが中止でき、ほかのメンバーにお知らせが届く', async () => {
+  // メンバー以外は中止できない
+  await assertDenied(outsider.call('cancelEvent', { postId }), 'functions/not-found');
+
+  await chie.call('cancelEvent', { postId });
+  const chat = await getDoc(doc(aiko.db, 'chats', postId));
+  assert.equal(chat.get('cancelled'), true);
+  assert.equal((await adminDb.doc(`posts/${postId}`).get()).get('status'), 'cancelled');
+
+  const messages = await getDocs(collection(aiko.db, 'chats', postId, 'messages'));
+  assert.equal(messages.docs.some((d) => String(d.get('body')).includes('ちえさんが')), true);
+
+  // 中止した本人以外（あいこ・ぶんた）に「中止」のお知らせ
+  for (const [p, expected] of [[aiko, 1], [bunta, 1], [chie, 0]] as const) {
+    const notes = await getDocs(collection(p.db, 'users', p.uid, 'notifications'));
+    assert.equal(notes.docs.filter((d) => String(d.get('body')).includes('中止')).length, expected);
+  }
+  // メンバーは中止後も詳細を開ける（トークへ移動するため）
+  const view = await bunta.call<{ status: string; isParticipant: boolean }>('getPost', { postId });
+  assert.equal(view.status, 'cancelled');
+  assert.equal(view.isParticipant, true);
+});
+
 test('締切を過ぎた募集は、ボードから静かに消える', async () => {
   const created = await aiko.call<{ id: string }>('createPost', {
     title: '朝カフェ',
@@ -240,14 +265,28 @@ test('締切を過ぎた募集は、ボードから静かに消える', async ()
   await assertDenied(bunta.call('react', { postId: created.id }), 'functions/failed-precondition');
 });
 
+test('開催日から 30 日たった予定は、トーク・募集・お知らせごと削除される', async () => {
+  // 開催日を 31 日前にずらす（時間がたったのと同じ状態にする）
+  const old = new Date(Date.now() - 31 * 24 * HOUR);
+  await adminDb.doc(`posts/${postId}`).update({ eventAt: old });
+  await adminDb.doc(`chats/${postId}`).update({ eventAt: old });
+
+  const deleted = await deleteEventsBefore(adminDb, Date.now() - 30 * 24 * HOUR);
+  assert.equal(deleted >= 1, true);
+  assert.equal((await adminDb.doc(`posts/${postId}`).get()).exists, false);
+  assert.equal((await adminDb.doc(`chats/${postId}`).get()).exists, false);
+  assert.equal((await adminDb.collection(`chats/${postId}/messages`).get()).size, 0);
+  assert.equal((await adminDb.collectionGroup('notifications').where('postId', '==', postId).get()).size, 0);
+});
+
 test('アカウントを削除すると、データが消える', async () => {
   await bunta.call('deleteAccount');
 
   assert.equal((await adminDb.doc('users/bunta').get()).exists, false);
   const group = await adminDb.doc(`groups/${groupId}`).get();
   assert.equal((group.get('memberPhones') as string[]).includes(bunta.phone), false);
-  const chat = await adminDb.doc(`chats/${postId}`).get();
-  assert.equal((chat.get('memberIds') as string[]).includes(bunta.uid), false);
+  const chatsWithBunta = await adminDb.collection('chats').where('memberIds', 'array-contains', bunta.uid).get();
+  assert.equal(chatsWithBunta.size, 0);
   const buntaMessages = await adminDb.collectionGroup('messages').where('userId', '==', bunta.uid).get();
   assert.equal(buntaMessages.size, 0);
   await assert.rejects(adminAuth.getUser(bunta.uid));

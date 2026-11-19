@@ -19,10 +19,12 @@
  *   getPost          … 募集 1 件の詳細
  *   react / unreact  … 「参加する」を押す／取り消す（揃ったら開催確定）
  *   withdrawPost     … 投稿者が募集を取り下げる
+ *   cancelEvent      … 開催確定のあと、メンバーが話し合って開催を中止する
  *   checkRegistered  … 電話番号の人が「ゆる募」を使っているか調べる（招待ボタン用）
  *   deleteAccount    … アカウントとデータを削除する
  * 【自動で動くもの】
  *   closeExpiredPosts … 10 分ごとに、締切を過ぎた募集を静かに終了させる
+ *   deleteOldEvents   … 毎日 1 回、開催日から 30 日たった予定のデータを削除する
  */
 
 import { initializeApp } from 'firebase-admin/app';
@@ -40,11 +42,13 @@ import { onInit, setGlobalOptions } from 'firebase-functions/v2';
 import { CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 
+import { deleteEventsBefore } from './cleanup';
 import {
   chunk,
   isExpired,
   isFull,
   normalizePhone,
+  retentionCutoff,
   toPublicPost,
   validatePostInput,
   type CreatePostInput,
@@ -250,8 +254,8 @@ export const getPost = onCall(async (request): Promise<PublicPost & { isParticip
   if (post.status === 'closed' && !isAuthor) throw notFound();
 
   const reacted = (await postRef.collection('reactions').doc(uid).get()).exists;
-  // 開催確定後は、メンバー（投稿者 or 参加を押した人）以外には見せません
-  if (post.status === 'confirmed' && !isAuthor && !reacted) throw notFound();
+  // 開催確定後（中止になったものも含む）は、メンバー（投稿者 or 参加を押した人）以外には見せません
+  if ((post.status === 'confirmed' || post.status === 'cancelled') && !isAuthor && !reacted) throw notFound();
 
   return { ...toPublicPost(postId, post, uid, reacted), isParticipant: isAuthor || reacted };
 });
@@ -411,6 +415,74 @@ export const closeExpiredPosts = onSchedule(
     snap.docs.forEach((doc) => batch.update(doc.ref, { status: 'closed', closedAt: FieldValue.serverTimestamp() }));
     await batch.commit();
     logger.info(`${snap.size} 件の募集を静かに終了しました`);
+  },
+);
+
+// ---------------------------------------------------------------------------
+// 開催の中止（開催確定のあと、不参加などで人数が足りなくなったとき）
+// ---------------------------------------------------------------------------
+export const cancelEvent = onCall(async (request) => {
+  const { uid } = requireUser(request);
+  const postId = requireId(request.data?.postId);
+  const chatRef = chatsCol().doc(postId);
+  const postRef = postsCol().doc(postId);
+
+  const outcome = await db.runTransaction(async (tx) => {
+    // --- 読み込み ---
+    const chatSnap = await tx.get(chatRef);
+    const memberIds: string[] = chatSnap.get('memberIds') ?? [];
+    // 中止できるのは、トークのメンバーだけ
+    if (!chatSnap.exists || !memberIds.includes(uid)) throw notFound();
+    if (chatSnap.get('cancelled') === true) {
+      return { cancelled: false, pushTokens: [] as string[], title: '' }; // もう中止になっている
+    }
+    const postSnap = await tx.get(postRef);
+    const others = memberIds.filter((id) => id !== uid);
+    const otherSnaps = others.length > 0 ? await tx.getAll(...others.map((id) => usersCol().doc(id))) : [];
+
+    const title: string = chatSnap.get('title') ?? '';
+    // トークの中ではもうお互いの名前が見えているので、誰が中止したかを書いても匿名性は崩れません
+    const members: Record<string, { name: string }> = chatSnap.get('members') ?? {};
+    const name = members[uid]?.name ?? 'メンバー';
+
+    // --- 書き込み ---
+    tx.update(chatRef, { cancelled: true, cancelledAt: FieldValue.serverTimestamp() });
+    if (postSnap.exists) tx.update(postRef, { status: 'cancelled' });
+    tx.set(chatRef.collection('messages').doc(), {
+      userId: null,
+      kind: 'system',
+      body: `${name}さんが「${title}」の開催を中止しました。`,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    // ほかのメンバーにお知らせ（中止を知らないまま集合場所に行かないように）
+    const pushTokens: string[] = [];
+    for (const snap of otherSnaps) {
+      tx.set(usersCol().doc(snap.id).collection('notifications').doc(), {
+        postId,
+        body: `「${title}」は中止になりました`,
+        isRead: false,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+      const token = snap.get('expoPushToken');
+      if (typeof token === 'string') pushTokens.push(token);
+    }
+    return { cancelled: true, pushTokens, title };
+  });
+
+  if (outcome.cancelled) {
+    await sendPush(outcome.pushTokens, 'ゆる募', `「${outcome.title}」は中止になりました`, { postId });
+  }
+  return { ok: true };
+});
+
+// ---------------------------------------------------------------------------
+// 保存期間が過ぎたデータの削除（プライバシーポリシー：開催日から 30 日後に削除）
+// ---------------------------------------------------------------------------
+export const deleteOldEvents = onSchedule(
+  { schedule: 'every day 04:00', timeZone: 'Asia/Tokyo' },
+  async () => {
+    const count = await deleteEventsBefore(db, retentionCutoff(Date.now()));
+    if (count > 0) logger.info(`保存期間が過ぎた ${count} 件の予定のデータを削除しました`);
   },
 );
 

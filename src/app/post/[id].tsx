@@ -31,8 +31,8 @@ export default function PostDetailScreen() {
   const load = useCallback(async () => {
     try {
       const result = await api.getPost(id);
-      // 開催確定済みで、自分がメンバーなら、グループトークへ
-      if (result.status === 'confirmed' && result.isParticipant) {
+      // 開催確定済み（または中止）で、自分がメンバーなら、グループトークへ
+      if ((result.status === 'confirmed' || result.status === 'cancelled') && result.isParticipant) {
         router.replace(`/chat/${id}`);
         return;
       }
