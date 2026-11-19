@@ -142,6 +142,21 @@ npm start                   # 別のターミナルで
 
 ---
 
+## 困ったとき（よくあるつまずき）
+
+| 症状 | 原因と直し方 |
+|---|---|
+| PowerShell で `npm` などが「スクリプトの実行が無効」で動かない | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` を実行して `Y` |
+| `firebase` が「認識されません」と出る | Firebase CLI が入っていない → `npm install -g firebase-tools` |
+| デプロイで `Timeout after 10000` と出る | 読み込みの待ち時間が足りない → `$env:FUNCTIONS_DISCOVERY_TIMEOUT = "60"` を実行してから、もう一度デプロイ |
+| `npx expo start --tunnel` で `Install @expo/ngrok and try again` と出る | `npm install --save-dev @expo/ngrok@^4.1.0` で yurubo フォルダに入れる |
+| ログインで `auth/operation-not-allowed` と出る | Authentication →「設定」→「**SMS 地域ポリシー**」で「許可」→「日本（JP）」を選んで保存 |
+| ログインで `auth/missing-client-identifier` / `auth/app-not-authorized` と出る | SHA-1 / SHA-256 の登録漏れ、または登録後にビルドし直していない |
+
+ログインに失敗したときは、画面に「エラーコード：auth/〜」が表示されます。原因を調べる手がかりにしてください。
+
+---
+
 ## テスト
 
 ```bash
