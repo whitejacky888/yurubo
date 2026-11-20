@@ -212,6 +212,8 @@ yurubo/
 │   ├── src/logic.ts         … ルール（入力チェック・開催確定の判定・匿名化）
 │   ├── src/logic.test.ts    … ルールの単体テスト
 │   └── test/integration.test.ts … エミュレーターでの結合テスト
+├── patches/                 … ライブラリの不具合を補う修正（npm install のときに自動で当たる）
+│   └── expo-contacts+57.0.6.patch … 同じ人が複数のアカウントに登録されていても、読みがなを取りこぼさない
 └── docs/                    … 仕様のドキュメント
 ```
 

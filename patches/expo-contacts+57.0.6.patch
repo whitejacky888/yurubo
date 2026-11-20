@@ -1,0 +1,32 @@
+diff --git a/node_modules/expo-contacts/android/src/main/java/expo/modules/contacts/next/domain/query/QueryAggregator.kt b/node_modules/expo-contacts/android/src/main/java/expo/modules/contacts/next/domain/query/QueryAggregator.kt
+index 589b0e7..047a707 100644
+--- a/node_modules/expo-contacts/android/src/main/java/expo/modules/contacts/next/domain/query/QueryAggregator.kt
++++ b/node_modules/expo-contacts/android/src/main/java/expo/modules/contacts/next/domain/query/QueryAggregator.kt
+@@ -93,7 +93,14 @@ class ContactModelBuilder(val contactId: ContactId) {
+       is DisplayName -> displayName = extractable
+       is PhotoUri -> photoUri = extractable
+       is PhotoThumbnailUri -> photoThumbnailUri = extractable
+-      is ExistingStructuredName -> structuredName = extractable
++      is ExistingStructuredName -> {
++        // [yurubo patch] 同じ人が複数のアカウントに登録されているとき、
++        // 最後に読んだ登録で上書きせず、読みがな（phonetic）が入っている登録を優先して残す
++        val current = structuredName
++        if (current == null || (!hasPhonetic(current) && hasPhonetic(extractable))) {
++          structuredName = extractable
++        }
++      }
+       is ExistingOrganization -> organization = extractable
+       is ExistingNote -> note = extractable
+       is ExistingPhoto -> photo = extractable
+@@ -107,6 +114,11 @@ class ContactModelBuilder(val contactId: ContactId) {
+     }
+   }
+ 
++  private fun hasPhonetic(name: ExistingStructuredName) =
++    !name.phoneticGivenName.isNullOrEmpty() ||
++      !name.phoneticMiddleName.isNullOrEmpty() ||
++      !name.phoneticFamilyName.isNullOrEmpty()
++
+   fun build() = ExistingContact(
+     contactId = contactId,
+     displayName = displayName,

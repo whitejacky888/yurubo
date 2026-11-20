@@ -63,6 +63,7 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
       const contacts = await Contact.getAllDetails([
         ContactField.FULL_NAME,
         ContactField.PHONETIC_FAMILY_NAME, // 姓の読みがな（例：たなか）
+        ContactField.PHONETIC_MIDDLE_NAME, // ミドルネームの読みがな（機種によってはここに入る）
         ContactField.PHONETIC_GIVEN_NAME, //  名の読みがな（例：たろう）
         ContactField.PHONES,
       ]);
@@ -70,7 +71,9 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
       const seen = new Set<string>();
       for (const contact of contacts) {
         // 姓と名の読みがなをつなげる（例：「たなか」＋「たろう」→「たなかたろう」）
-        const reading = [contact.phoneticFamilyName, contact.phoneticGivenName].filter(Boolean).join('');
+        const reading = [contact.phoneticFamilyName, contact.phoneticMiddleName, contact.phoneticGivenName]
+          .filter(Boolean)
+          .join('');
         for (const phone of contact.phones ?? []) {
           const normalized = normalizePhone(phone.number ?? '');
           if (!normalized || normalized === myPhone || seen.has(normalized)) continue;

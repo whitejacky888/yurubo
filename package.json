@@ -32,6 +32,7 @@
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
+    "patch-package": "^8.0.1",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -42,7 +43,8 @@
     "lint": "expo lint",
     "test": "npm --prefix functions test",
     "emulators": "npm --prefix functions run build && firebase emulators:start",
-    "test:emulator": "npm --prefix functions run build && firebase emulators:exec --project demo-yurubo --only auth,firestore,functions \"npm --prefix functions run test:integration\""
+    "test:emulator": "npm --prefix functions run build && firebase emulators:exec --project demo-yurubo --only auth,firestore,functions \"npm --prefix functions run test:integration\"",
+    "postinstall": "patch-package"
   },
   "private": true
 }
