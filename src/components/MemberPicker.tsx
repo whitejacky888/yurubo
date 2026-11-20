@@ -27,6 +27,7 @@ import { Txt } from './Txt';
 /** 電話帳の 1 人分（電話番号が複数ある人は、番号ごとに 1 行にします） */
 interface PhonebookEntry {
   key: string;
+  contactId: string; // 電話帳の中での ID（確認用の表示で使う）
   name: string;
   reading: string; // 読みがな（電話帳に登録されていれば。無ければ空）
   phone: string; // +81 の形にそろえた番号
@@ -88,6 +89,7 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
           }
           byPhone.set(normalized, {
             key: `${contact.id}-${normalized}`,
+            contactId: contact.id,
             name: contact.fullName || normalized,
             reading,
             phone: normalized,
@@ -137,6 +139,31 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
       onChange(selected.filter((m) => m.phone !== entry.phone));
     } else {
       onChange([...selected, { name: entry.name, phone: entry.phone }]);
+    }
+  };
+
+  /**
+   * 【確認用・一時的】連絡先の行を長押しすると、アプリがその人について受け取った名前の情報を表示します。
+   * 読みがなが、電話帳のどの欄に入っているかを調べるためのものです。原因がわかったら消します。
+   */
+  const showContactDetails = async (entry: PhonebookEntry) => {
+    try {
+      const details = await new Contact(entry.contactId).getDetails([
+        ContactField.FULL_NAME,
+        ContactField.FAMILY_NAME,
+        ContactField.MIDDLE_NAME,
+        ContactField.GIVEN_NAME,
+        ContactField.PHONETIC_FAMILY_NAME,
+        ContactField.PHONETIC_MIDDLE_NAME,
+        ContactField.PHONETIC_GIVEN_NAME,
+        ContactField.EXTRA_NAMES, // ニックネームなど
+        ContactField.COMPANY,
+        ContactField.PHONETIC_COMPANY_NAME,
+      ]);
+      const { id: _id, ...rest } = details; // ID は表示しない
+      Alert.alert('確認用：受け取った名前の情報', JSON.stringify({ 一覧での読みがな: entry.reading, ...rest }, null, 1));
+    } catch (error) {
+      Alert.alert('確認用：読み込めませんでした', String(error));
     }
   };
 
@@ -207,6 +234,7 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
               <Pressable
                 key={entry.key}
                 onPress={() => toggle(entry)}
+                onLongPress={() => showContactDetails(entry)}
                 style={styles.item}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked }}
