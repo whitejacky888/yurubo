@@ -37,19 +37,42 @@ export function displayPhone(e164: string): string {
 }
 
 /**
+ * 文字の書き方の違いをそろえて、比べやすくします（検索・並べ替え用）。
+ *   ・カタカナ → ひらがな（「タナカ」も「たなか」も同じ扱い）
+ *   ・半角カナ・全角英数字 → ふつうの文字（「ﾀﾅｶ」→「たなか」、「ＡＢＣ」→「abc」）
+ *   ・英字は小文字に、空白は取り除く（「田中 太郎」→「田中太郎」）
+ */
+export function normalizeForSearch(text: string): string {
+  return (
+    (text ?? '')
+      // NFKC：半角カナを全角に、全角英数字を半角にそろえる Unicode の決まりごと
+      .normalize('NFKC')
+      // カタカナ（ァ〜ヶ）は、ひらがなより 0x60 だけ後ろの番号なので、引き算でひらがなにする
+      .replace(/[\u30a1-\u30f6]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60))
+      .toLowerCase()
+      .replace(/\s+/g, '')
+  );
+}
+
+/**
  * 電話帳の 1 人が、検索欄に入れた言葉に当てはまるかを調べます。
- *   ・名前に言葉が含まれていれば当てはまる（英字は大文字・小文字を区別しない）
+ *   ・名前か読みがなに言葉が含まれていれば当てはまる
+ *     （ひらがな・カタカナ・半角カナ、英字の大文字・小文字の違いは気にしない）
  *   ・言葉に数字が入っていれば、電話番号でも探す（"090-1234" でも "+8190" でも見つかる）
  * 検索欄が空なら、全員が当てはまります。
  */
-export function matchesContact(entry: { name: string; phone: string }, keyword: string): boolean {
-  const word = keyword.trim().toLowerCase();
+export function matchesContact(
+  entry: { name: string; phone: string; reading?: string },
+  keyword: string,
+): boolean {
+  const word = normalizeForSearch(keyword);
   if (!word) return true;
-  if (entry.name.toLowerCase().includes(word)) return true;
+  if (normalizeForSearch(entry.name).includes(word)) return true;
+  if (entry.reading && normalizeForSearch(entry.reading).includes(word)) return true;
 
   // 入力に数字が 1 つも無ければ、番号では探さない
   // （ここで空の文字と比べると「どの番号にも含まれる」ことになり、全員が当てはまってしまう）
-  const digits = word.replace(/\D/g, '');
+  const digits = keyword.replace(/\D/g, '');
   if (!digits) return false;
 
   const international = entry.phone.replace(/\D/g, ''); // 例：819012345678

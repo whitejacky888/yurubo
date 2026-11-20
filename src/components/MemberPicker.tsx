@@ -15,7 +15,7 @@ import { Contact, ContactField, getPermissionsAsync, requestPermissionsAsync } f
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 
-import { displayPhone, matchesContact, normalizePhone } from '../lib/phone';
+import { displayPhone, matchesContact, normalizeForSearch, normalizePhone } from '../lib/phone';
 import type { GroupMember } from '../lib/types';
 import { colors } from '../theme';
 import { Card } from './Card';
@@ -28,6 +28,7 @@ import { Txt } from './Txt';
 interface PhonebookEntry {
   key: string;
   name: string;
+  reading: string; // 読みがな（電話帳に登録されていれば。無ければ空）
   phone: string; // +81 の形にそろえた番号
 }
 
@@ -58,19 +59,33 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
   const loadPhonebook = useCallback(async () => {
     setLoadingContacts(true);
     try {
-      // 名前と電話番号だけを読み込みます（必要なものだけ読むのがプライバシーの基本）
-      const contacts = await Contact.getAllDetails([ContactField.FULL_NAME, ContactField.PHONES]);
+      // 名前・読みがな・電話番号だけを読み込みます（必要なものだけ読むのがプライバシーの基本）
+      const contacts = await Contact.getAllDetails([
+        ContactField.FULL_NAME,
+        ContactField.PHONETIC_FAMILY_NAME, // 姓の読みがな（例：たなか）
+        ContactField.PHONETIC_GIVEN_NAME, //  名の読みがな（例：たろう）
+        ContactField.PHONES,
+      ]);
       const entries: PhonebookEntry[] = [];
       const seen = new Set<string>();
       for (const contact of contacts) {
+        // 姓と名の読みがなをつなげる（例：「たなか」＋「たろう」→「たなかたろう」）
+        const reading = [contact.phoneticFamilyName, contact.phoneticGivenName].filter(Boolean).join('');
         for (const phone of contact.phones ?? []) {
           const normalized = normalizePhone(phone.number ?? '');
           if (!normalized || normalized === myPhone || seen.has(normalized)) continue;
           seen.add(normalized);
-          entries.push({ key: `${contact.id}-${normalized}`, name: contact.fullName || normalized, phone: normalized });
+          entries.push({
+            key: `${contact.id}-${normalized}`,
+            name: contact.fullName || normalized,
+            reading,
+            phone: normalized,
+          });
         }
       }
-      entries.sort((a, b) => a.name.localeCompare(b.name, 'ja')); // 名前順（日本語の並び）
+      // 読みがながあれば読みがな順（あいうえお順）、無ければ名前順に並べる
+      const sortKey = (e: PhonebookEntry) => normalizeForSearch(e.reading || e.name);
+      entries.sort((a, b) => sortKey(a).localeCompare(sortKey(b), 'ja'));
       setPhonebook(entries);
     } catch (error) {
       console.warn(error);
@@ -169,7 +184,7 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
 
       {permission === 'granted' ? (
         <View>
-          <Field label="電話帳から選ぶ" value={search} onChangeText={setSearch} placeholder="名前や番号でさがす" />
+          <Field label="電話帳から選ぶ" value={search} onChangeText={setSearch} placeholder="名前・よみがな・番号でさがす" />
           {loadingContacts ? <ActivityIndicator color={colors.ink} style={styles.loading} /> : null}
           {!loadingContacts && filtered.length === 0 ? (
             <Txt variant="sub" style={styles.note}>選べる連絡先がありません。</Txt>
