@@ -67,8 +67,8 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
         ContactField.PHONETIC_GIVEN_NAME, //  名の読みがな（例：たろう）
         ContactField.PHONES,
       ]);
-      const entries: PhonebookEntry[] = [];
-      const seen = new Set<string>();
+      // 電話番号ごとに 1 行にまとめる入れ物（Map：番号 → 1 行分のデータ）
+      const byPhone = new Map<string, PhonebookEntry>();
       for (const contact of contacts) {
         // 姓と名の読みがなをつなげる（例：「たなか」＋「たろう」→「たなかたろう」）
         const reading = [contact.phoneticFamilyName, contact.phoneticMiddleName, contact.phoneticGivenName]
@@ -76,9 +76,17 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
           .join('');
         for (const phone of contact.phones ?? []) {
           const normalized = normalizePhone(phone.number ?? '');
-          if (!normalized || normalized === myPhone || seen.has(normalized)) continue;
-          seen.add(normalized);
-          entries.push({
+          if (!normalized || normalized === myPhone) continue;
+          const already = byPhone.get(normalized);
+          if (already) {
+            // 同じ番号の連絡先が別々に 2 件ある（例：SIM と Google に別々に保存）ときは、
+            // 先に読んだほうに読みがなが無ければ、後から読んだほうの読みがなを使う
+            if (!already.reading && reading) {
+              byPhone.set(normalized, { ...already, name: contact.fullName || already.name, reading });
+            }
+            continue;
+          }
+          byPhone.set(normalized, {
             key: `${contact.id}-${normalized}`,
             name: contact.fullName || normalized,
             reading,
@@ -86,6 +94,7 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
           });
         }
       }
+      const entries = [...byPhone.values()];
       // 読みがながあれば読みがな順（あいうえお順）、無ければ名前順に並べる
       const sortKey = (e: PhonebookEntry) => normalizeForSearch(e.reading || e.name);
       entries.sort((a, b) => sortKey(a).localeCompare(sortKey(b), 'ja'));
