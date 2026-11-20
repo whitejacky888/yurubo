@@ -15,7 +15,7 @@ import { Contact, ContactField, getPermissionsAsync, requestPermissionsAsync } f
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 
-import { displayPhone, normalizePhone } from '../lib/phone';
+import { displayPhone, matchesContact, normalizePhone } from '../lib/phone';
 import type { GroupMember } from '../lib/types';
 import { colors } from '../theme';
 import { Card } from './Card';
@@ -132,9 +132,7 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
   };
 
   // 検索欄に入れた文字で絞り込み（表示は最大 200 人まで）
-  const filtered = phonebook
-    .filter((entry) => !search || entry.name.includes(search) || entry.phone.includes(search.replace(/\D/g, '')))
-    .slice(0, 200);
+  const filtered = phonebook.filter((entry) => matchesContact(entry, search)).slice(0, 200);
 
   return (
     <View>
