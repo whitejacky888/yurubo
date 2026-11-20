@@ -205,7 +205,11 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
                 </View>
                 <View style={styles.grow}>
                   <Txt>{entry.name}</Txt>
-                  <Txt variant="small">{displayPhone(entry.phone)}</Txt>
+                  {/* 読みがなが登録されていれば、番号の前に小さく表示（読みがなで探せる人の目印） */}
+                  <Txt variant="small">
+                    {entry.reading ? `${entry.reading}　` : ''}
+                    {displayPhone(entry.phone)}
+                  </Txt>
                 </View>
               </Pressable>
             );
