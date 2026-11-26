@@ -13,7 +13,7 @@
  */
 import { Contact, ContactField, getPermissionsAsync, requestPermissionsAsync } from 'expo-contacts';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { displayPhone, matchesContact, normalizeForSearch, normalizePhone } from '../lib/phone';
 import type { GroupMember } from '../lib/types';
@@ -107,17 +107,29 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
     }
   }, [myPhone]);
 
-  // 最初に 1 回だけ、電話帳へのアクセスが許可されているかを確認します
+  // 電話帳へのアクセスが許可されているかを確認し、許可されていれば読み込みます。
+  //   ・画面を開いたとき
+  //   ・ほかのアプリ（連絡先アプリやスマホの設定）から、ゆる募に戻ってきたとき
+  // 戻ってきたときにも読み込み直すのは、連絡先を編集したり、「設定を開く」から
+  // アクセスを許可したりしたあと、すぐ一覧に反映されるようにするためです。
   useEffect(() => {
-    getPermissionsAsync().then((result) => {
-      if (result.granted) {
-        setPermission('granted');
-        loadPhonebook();
-      } else {
-        // canAskAgain が true なら、まだ聞いていない（もう一度聞ける）
-        setPermission(result.canAskAgain ? 'undetermined' : 'denied');
-      }
+    const checkAndLoad = () =>
+      getPermissionsAsync().then((result) => {
+        if (result.granted) {
+          setPermission('granted');
+          loadPhonebook();
+        } else {
+          // canAskAgain が true なら、まだ聞いていない（もう一度聞ける）
+          setPermission(result.canAskAgain ? 'undetermined' : 'denied');
+        }
+      });
+
+    checkAndLoad();
+    // AppState は、アプリが前面（active）か裏（background）かを教えてくれる仕組みです
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') checkAndLoad();
     });
+    return () => subscription.remove(); // 画面を閉じたら、見張るのをやめる
   }, [loadPhonebook]);
 
   /** 「許可する」を押したとき：ここで初めて OS の許可ダイアログを出します */
