@@ -54,28 +54,49 @@ export function normalizeForSearch(text: string): string {
   );
 }
 
+/** 検索用に下ごしらえした文字（電話帳を読み込んだときに 1 回だけ作っておく） */
+export interface SearchIndex {
+  text: string; // 名前と読みがなを、比べやすい形にしてつなげたもの
+  digits: string; // 電話番号の数字（国際形式と 0 始まりの両方）
+}
+
 /**
- * 電話帳の 1 人が、検索欄に入れた言葉に当てはまるかを調べます。
+ * 電話帳の 1 人分について、検索用の下ごしらえを作ります。
+ * 1 文字入力するたびに全員分の変換をやり直すと重くなるので、読み込んだときに 1 回だけ作ります。
+ */
+export function buildSearchIndex(entry: { name: string; phone: string; reading?: string }): SearchIndex {
+  return {
+    // 名前と読みがなの間に改行を入れて、つなぎ目で偶然一致しないようにする
+    text: `${normalizeForSearch(entry.name)}\n${normalizeForSearch(entry.reading ?? '')}`,
+    digits: `${entry.phone.replace(/\D/g, '')}\n${displayPhone(entry.phone).replace(/\D/g, '')}`,
+  };
+}
+
+/**
+ * 検索欄に入れた言葉を、比べやすい形にしておきます（1 文字入力するたびに 1 回だけ）。
+ *   word   … 名前・読みがなと比べる文字
+ *   digits … 電話番号と比べる数字（数字が無ければ空）
+ */
+export function prepareQuery(keyword: string) {
+  return { word: normalizeForSearch(keyword), digits: (keyword ?? '').replace(/\D/g, '') };
+}
+
+/**
+ * 下ごしらえ済みの 1 人分が、検索の言葉に当てはまるかを調べます。
  *   ・名前か読みがなに言葉が含まれていれば当てはまる
  *     （ひらがな・カタカナ・半角カナ、英字の大文字・小文字の違いは気にしない）
  *   ・言葉に数字が入っていれば、電話番号でも探す（"090-1234" でも "+8190" でも見つかる）
  * 検索欄が空なら、全員が当てはまります。
  */
-export function matchesContact(
-  entry: { name: string; phone: string; reading?: string },
-  keyword: string,
-): boolean {
-  const word = normalizeForSearch(keyword);
-  if (!word) return true;
-  if (normalizeForSearch(entry.name).includes(word)) return true;
-  if (entry.reading && normalizeForSearch(entry.reading).includes(word)) return true;
-
+export function matchesIndex(index: SearchIndex, query: { word: string; digits: string }): boolean {
+  if (!query.word) return true;
+  if (index.text.includes(query.word)) return true;
   // 入力に数字が 1 つも無ければ、番号では探さない
   // （ここで空の文字と比べると「どの番号にも含まれる」ことになり、全員が当てはまってしまう）
-  const digits = keyword.replace(/\D/g, '');
-  if (!digits) return false;
+  return query.digits.length > 0 && index.digits.includes(query.digits);
+}
 
-  const international = entry.phone.replace(/\D/g, ''); // 例：819012345678
-  const local = displayPhone(entry.phone).replace(/\D/g, ''); // 例：09012345678
-  return international.includes(digits) || local.includes(digits);
+/** 1 人分だけを調べる、かんたん版（下ごしらえと判定をまとめて行う） */
+export function matchesContact(entry: { name: string; phone: string; reading?: string }, keyword: string): boolean {
+  return matchesIndex(buildSearchIndex(entry), prepareQuery(keyword));
 }

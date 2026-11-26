@@ -12,10 +12,18 @@
  *   ・許可されなかったら、手入力か「設定を開く」ボタンで対応する
  */
 import { Contact, ContactField, getPermissionsAsync, requestPermissionsAsync } from 'expo-contacts';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, AppState, Linking, Pressable, StyleSheet, View } from 'react-native';
 
-import { displayPhone, matchesContact, normalizeForSearch, normalizePhone } from '../lib/phone';
+import {
+  buildSearchIndex,
+  displayPhone,
+  matchesIndex,
+  normalizeForSearch,
+  normalizePhone,
+  prepareQuery,
+  type SearchIndex,
+} from '../lib/phone';
 import type { GroupMember } from '../lib/types';
 import { colors } from '../theme';
 import { Card } from './Card';
@@ -30,7 +38,11 @@ interface PhonebookEntry {
   name: string;
   reading: string; // 読みがな（電話帳に登録されていれば。無ければ空）
   phone: string; // +81 の形にそろえた番号
+  index: SearchIndex; // 検索用の下ごしらえ（読み込んだときに 1 回だけ作る）
 }
+
+/** 一覧に一度に並べる最大人数（多すぎると画面が重くなり、文字入力が遅れるため） */
+const MAX_ROWS = 50;
 
 /** 電話帳の状態：まだ聞いていない / 許可された / 許可されなかった */
 type Permission = 'checking' | 'undetermined' | 'granted' | 'denied';
@@ -82,15 +94,18 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
             // 同じ番号の連絡先が別々に 2 件ある（例：SIM と Google に別々に保存）ときは、
             // 先に読んだほうに読みがなが無ければ、後から読んだほうの読みがなを使う
             if (!already.reading && reading) {
-              byPhone.set(normalized, { ...already, name: contact.fullName || already.name, reading });
+              const name = contact.fullName || already.name;
+            byPhone.set(normalized, { ...already, name, reading, index: buildSearchIndex({ name, reading, phone: normalized }) });
             }
             continue;
           }
+          const name = contact.fullName || normalized;
           byPhone.set(normalized, {
             key: `${contact.id}-${normalized}`,
-            name: contact.fullName || normalized,
+            name,
             reading,
             phone: normalized,
+            index: buildSearchIndex({ name, reading, phone: normalized }),
           });
         }
       }
@@ -171,7 +186,15 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
   };
 
   // 検索欄に入れた文字で絞り込み（表示は最大 200 人まで）
-  const filtered = phonebook.filter((entry) => matchesContact(entry, search)).slice(0, 200);
+  // 絞り込みは、入力より「後回し」にします（useDeferredValue）。
+  // こうすると、スマホは文字の入力を先に受け付けて、一覧の並べ直しは手が空いたときに行うので、
+  // 入力した文字が抜けたり遅れたりしにくくなります。
+  const deferredSearch = useDeferredValue(search);
+  const matched = useMemo(() => {
+    const query = prepareQuery(deferredSearch);
+    return phonebook.filter((entry) => matchesIndex(entry.index, query));
+  }, [phonebook, deferredSearch]);
+  const filtered = matched.slice(0, MAX_ROWS);
 
   return (
     <View>
@@ -238,6 +261,11 @@ export function MemberPicker({ selected, onChange, myPhone }: Props) {
               </Pressable>
             );
           })}
+          {matched.length > MAX_ROWS ? (
+            <Txt variant="sub" style={styles.note}>
+              ほかに {matched.length - MAX_ROWS} 人います。名前・よみがな・番号で絞り込んでください。
+            </Txt>
+          ) : null}
         </View>
       ) : null}
 
